@@ -1,4 +1,4 @@
-package com.example.admin.myadvedio.media;
+package com.example.admin.myadvedio;
 
 import android.content.Context;
 

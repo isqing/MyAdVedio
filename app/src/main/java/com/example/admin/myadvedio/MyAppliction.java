@@ -4,7 +4,6 @@ import android.app.Application;
 import android.content.Context;
 
 import com.danikula.videocache.HttpProxyCacheServer;
-import com.example.admin.myadvedio.media.Utils;
 
 /**
  * create by yqli on 2018/10/25
@@ -25,6 +24,7 @@ public class MyAppliction extends Application {
     private HttpProxyCacheServer newProxy() {
         return new HttpProxyCacheServer.Builder(this)
                 .cacheDirectory(Utils.getVideoCacheDir(this))
+                .maxCacheSize(10 * 1024)       // 1 Gb for cache
                 .build();
     }
 }
