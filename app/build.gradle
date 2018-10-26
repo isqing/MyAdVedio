@@ -26,5 +26,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     //    implementation 'com.danikula:videocache:2.7.1'
-        implementation project(':library')
+    implementation project(':library')
+    implementation files('libs/isoparser-1.0-RC-6-20120510.091755-1.jar')
 }

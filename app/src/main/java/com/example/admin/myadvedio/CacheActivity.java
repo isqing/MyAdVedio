@@ -20,9 +20,9 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 
 public class CacheActivity extends AppCompatActivity implements CacheListener, View.OnClickListener {
-//        private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
+        private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
 //    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/dooh/1535873864840.mp4";
-    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/gnometest/beer/a67e32f7b971eda7e5af08099d6bd3a2.mp4";
+//    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/gnometest/beer/a67e32f7b971eda7e5af08099d6bd3a2.mp4";
     VideoView videoView;
     private TextView tvTimer;
     private ImageView ivState, ivVoice, ivClose;
