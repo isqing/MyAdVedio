@@ -24,7 +24,7 @@ public class MyAppliction extends Application {
     private HttpProxyCacheServer newProxy() {
         return new HttpProxyCacheServer.Builder(this)
                 .cacheDirectory(Utils.getVideoCacheDir(this))
-                .maxCacheSize(10 * 1024)       // 1 Gb for cache
+                .maxCacheSize(20 * 1024)       // 10 m for cache
                 .build();
     }
 }

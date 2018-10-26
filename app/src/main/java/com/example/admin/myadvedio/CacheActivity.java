@@ -19,15 +19,17 @@ import com.danikula.videocache.HttpProxyCacheServer;
 import java.io.File;
 import java.lang.ref.WeakReference;
 
-public class CacheActivity extends AppCompatActivity implements CacheListener ,View.OnClickListener{
-    private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
+public class CacheActivity extends AppCompatActivity implements CacheListener, View.OnClickListener {
+//        private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
+//    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/dooh/1535873864840.mp4";
+    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/gnometest/beer/a67e32f7b971eda7e5af08099d6bd3a2.mp4";
     VideoView videoView;
     private TextView tvTimer;
-    private ImageView ivState,ivVoice,ivClose;
-    private boolean isSilent=true;//true开启静音，false关闭静音
+    private ImageView ivState, ivVoice, ivClose;
+    private boolean isSilent = true;//true开启静音，false关闭静音
     private int currentVoice;
-    private final static int TIMEDURATION=0x123;
-    private final static int TIMEOUT=0x124;
+    private final static int TIMEDURATION = 0x123;
+    private final static int TIMEOUT = 0x124;
     private VideoViewHandler videoViewHandler;
     private HttpProxyCacheServer proxy;
     private int position;
@@ -39,22 +41,22 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
         Log.i("cache==", "onCreate: ");
         initView();
         playVoideo();
-        videoViewHandler=new VideoViewHandler(this);
-        videoViewHandler.sendEmptyMessageDelayed(TIMEDURATION,1000);
-//        videoViewHandler.sendEmptyMessageDelayed(TIMEOUT,3000);
+        videoViewHandler = new VideoViewHandler(this);
+        videoViewHandler.sendEmptyMessageDelayed(TIMEDURATION, 1000);
+        videoViewHandler.sendEmptyMessageDelayed(TIMEOUT, 3000);
 
     }
+
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (position!=0) {
+    protected void onStart() {
+        super.onStart();
 //            videoView.resume();
-            Log.i("position==", "onResume: "+position);
+            Log.i("position==", "onStart: " + position);
+            int time = (videoView.getDuration() - position) / 1000;
+            int timeCha=time>0?time:0;
+            tvTimer.setText(String.valueOf(timeCha));
             videoView.seekTo(position);
-
             setSeekToPosition();
-
-        }
     }
 
     private void setSeekToPosition() {
@@ -67,23 +69,25 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
                     @Override
                     public void onSeekComplete(MediaPlayer mp) {
                         // seekTo 方法完成时的回调
-                        if(!videoView.isPlaying()){
+                        if (!videoView.isPlaying()) {
                             videoView.start();
-                            int time = (videoView.getDuration() - position) / 1000;
-                            tvTimer.setText(String.valueOf(time));
                         }
                     }
                 });
             }
         });
     }
+
     @Override
     protected void onPause() {
         super.onPause();
         position = videoView.getCurrentPosition();
-        videoView.pause();
-        Log.i("position==", "onStop: "+ position +","+videoView.getDuration());
+        if (position>0) {
+            videoView.pause();
+        }
+        Log.i("position==", "onStop: " + position + "," + videoView.getDuration());
     }
+
     private void playVoideo() {
         videoView.setVideoURI(Uri.parse(VIDEO_URL));
         proxy = MyAppliction.getProxy(getApplicationContext());
@@ -94,11 +98,11 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
     }
 
     private void initView() {
-        videoView=findViewById(R.id.videoView);
-        tvTimer=findViewById(R.id.tv_timer);
-        ivState=findViewById(R.id.iv_state);
-        ivVoice=findViewById(R.id.iv_voice);
-        ivClose=findViewById(R.id.iv_close);
+        videoView = findViewById(R.id.videoView);
+        tvTimer = findViewById(R.id.tv_timer);
+        ivState = findViewById(R.id.iv_state);
+        ivVoice = findViewById(R.id.iv_voice);
+        ivClose = findViewById(R.id.iv_close);
         ivState.setOnClickListener(this);
         ivVoice.setOnClickListener(this);
         ivClose.setOnClickListener(this);
@@ -109,6 +113,13 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
                 ivState.setVisibility(View.VISIBLE);
                 ivState.setBackgroundResource(R.mipmap.pause);
                 ivClose.setVisibility(View.VISIBLE);
+            }
+        });
+        videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                Log.i("setOnPreparedListener", "onPrepared: ");
+                videoViewHandler.removeMessages(TIMEOUT);
             }
         });
     }
@@ -146,13 +157,15 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
                     isSilent = true;
                 }
                 break;
-                case R.id.iv_close:
-                    finish();
-                    break;
+            case R.id.iv_close:
+                finish();
+                break;
         }
     }
+
     private static class VideoViewHandler extends Handler {
         private WeakReference<Activity> activityWeakReference;
+
         public VideoViewHandler() {
         }
 
@@ -163,18 +176,18 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            CacheActivity activity = (CacheActivity)activityWeakReference.get();
-            if (activity !=null){
+            CacheActivity cacheActivity = (CacheActivity) activityWeakReference.get();
+            if (cacheActivity != null) {
                 switch (msg.what) {
-                    case  TIMEDURATION:
-                        CacheActivity cacheActivity = (CacheActivity) activity;
+                    case TIMEDURATION:
                         VideoView videoView = cacheActivity.videoView;
                         int time = (videoView.getDuration() - videoView.getCurrentPosition()) / 1000;
                         cacheActivity.tvTimer.setText(String.valueOf(time));
                         sendEmptyMessageDelayed(TIMEDURATION, 1000);
                         break;
-                    case  TIMEOUT:
-                        activity.finish();
+                    case TIMEOUT:
+                        Log.i("cache===", "handleMessage: timeout");
+                        cacheActivity.ivClose.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -184,12 +197,12 @@ public class CacheActivity extends AppCompatActivity implements CacheListener ,V
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (videoViewHandler!=null){
+        if (videoViewHandler != null) {
             videoViewHandler.removeCallbacksAndMessages(null);
-            videoViewHandler=null;
+            videoViewHandler = null;
         }
-        if (proxy!=null){
-            proxy.unregisterCacheListener(this,VIDEO_URL);
+        if (proxy != null) {
+            proxy.unregisterCacheListener(this, VIDEO_URL);
         }
     }
 }
