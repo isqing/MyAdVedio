@@ -3,12 +3,19 @@ package com.example.admin.myadvedio;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+import com.example.admin.myadvedio.cacheVideo.CacheActivity;
+import com.example.admin.myadvedio.cacheVideo.CacheVideoDialogFragment;
+import com.example.admin.myadvedio.cacheVideo.CacheVideoEventListener;
 
-    Button btnCache,btnCacheOther,btnVideo;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,CacheVideoEventListener{
+
+    Button btnCache,btnCacheOther,btnVideo,btnDialog;
+    private CacheVideoDialogFragment cacheVideoDialogFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -17,9 +24,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnCacheOther=findViewById(R.id.btn_cache_other);
         btnCacheOther=findViewById(R.id.btn_cache_other);
         btnVideo=findViewById(R.id.btn_video);
+        btnDialog=findViewById(R.id.btn_dialog);
         btnCacheOther.setOnClickListener(this);
         btnCache.setOnClickListener(this);
         btnVideo.setOnClickListener(this);
+        btnDialog.setOnClickListener(this);
+        cacheVideoDialogFragment = new CacheVideoDialogFragment();
+        cacheVideoDialogFragment.setCacheVideoEventListener(this);
     }
 
     @Override
@@ -33,7 +44,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btn_video:
                 startActivity(new Intent(MainActivity.this,VideoActivity.class));
+            case R.id.btn_dialog:
+                showEditDialog();
                 break;
         }
+    }
+    public void showEditDialog()
+    {
+        cacheVideoDialogFragment.show(getSupportFragmentManager(), "EditNameDialog");
+    }
+    public void hideEditDialog()
+    {
+        cacheVideoDialogFragment.dismiss();
+    }
+
+    @Override
+    public void cacheVideoLoadError() {
+        Log.i("cacheVideo", "cacheVideoLoadError: ");
+    }
+
+    @Override
+    public void cacheVideoStart() {
+        Log.i("cacheVideo", "cacheVideoStart: ");
+    }
+
+    @Override
+    public void cacheVideoEnd() {
+        Log.i("cacheVideo", "cacheVideoEnd: ");
+    }
+
+    @Override
+    public void cacheVideoComplete() {
+        Log.i("cacheVideo", "cacheVideoComplete: ");
     }
 }

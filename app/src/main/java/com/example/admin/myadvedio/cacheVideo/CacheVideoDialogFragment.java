@@ -1,28 +1,36 @@
-package com.example.admin.myadvedio;
+package com.example.admin.myadvedio.cacheVideo;
 
 import android.app.Activity;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.VideoView;
 
 import com.danikula.videocache.CacheListener;
 import com.danikula.videocache.HttpProxyCacheServer;
+import com.example.admin.myadvedio.MyAppliction;
+import com.example.admin.myadvedio.R;
+import com.example.admin.myadvedio.VoiceUtil;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
 
-public class CacheActivity extends AppCompatActivity implements CacheListener, View.OnClickListener {
-        private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
+/**
+ * create by yqli on 2018/10/26
+ */
+public class CacheVideoDialogFragment extends DialogFragment implements CacheListener, View.OnClickListener {
+    //        private String VIDEO_URL="https://raw.githubusercontent.com/danikula/AndroidVideoCache/master/files/orange1.mp4";
 //    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/dooh/1535873864840.mp4";
-//    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/gnometest/beer/a67e32f7b971eda7e5af08099d6bd3a2.mp4";
+    private String VIDEO_URL = "http://iflyad.bj.openstorage.cn/gnometest/beer/a67e32f7b971eda7e5af08099d6bd3a2.mp4";
     VideoView videoView;
     private TextView tvTimer;
     private ImageView ivState, ivVoice, ivClose;
@@ -33,30 +41,37 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
     private VideoViewHandler videoViewHandler;
     private HttpProxyCacheServer proxy;
     private int position;
-
+    private ImageView ivLanding;
+    private boolean isPlayFinish = false;
+    private CacheVideoEventListener cacheVideoEventListener;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_cache);
-        Log.i("cache==", "onCreate: ");
-        initView();
+        setStyle(STYLE_NO_FRAME, android.R.style.Theme_Holo_Light);
+
+    }
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.activity_cache, container);
+        initView(view);
         playVoideo();
         videoViewHandler = new VideoViewHandler(this);
         videoViewHandler.sendEmptyMessageDelayed(TIMEDURATION, 1000);
-        videoViewHandler.sendEmptyMessageDelayed(TIMEOUT, 3000);
-
+        videoViewHandler.sendEmptyMessageDelayed(TIMEOUT, 5000);
+        return view;
     }
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
 //            videoView.resume();
-            Log.i("position==", "onStart: " + position);
-            int time = (videoView.getDuration() - position) / 1000;
-            int timeCha=time>0?time:0;
-            tvTimer.setText(String.valueOf(timeCha));
-            videoView.seekTo(position);
-            setSeekToPosition();
+        Log.i("position==", "onStart: " + position);
+        int time = (videoView.getDuration() - position) / 1000;
+        int timeCha = time > 0 ? time : 0;
+        tvTimer.setText(String.valueOf(timeCha));
+        videoView.seekTo(position);
+        setSeekToPosition();
     }
 
     private void setSeekToPosition() {
@@ -79,10 +94,10 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
     }
 
     @Override
-    protected void onPause() {
+    public void onPause() {
         super.onPause();
         position = videoView.getCurrentPosition();
-        if (position>0) {
+        if (position > 0) {
             videoView.pause();
         }
         Log.i("position==", "onStop: " + position + "," + videoView.getDuration());
@@ -90,19 +105,20 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
 
     private void playVoideo() {
         videoView.setVideoURI(Uri.parse(VIDEO_URL));
-        proxy = MyAppliction.getProxy(getApplicationContext());
+        proxy = MyAppliction.getProxy(getContext());
         proxy.registerCacheListener(this, VIDEO_URL);
         String proxyUrl = proxy.getProxyUrl(VIDEO_URL);
         videoView.setVideoPath(proxyUrl);
         videoView.start();
     }
 
-    private void initView() {
-        videoView = findViewById(R.id.videoView);
-        tvTimer = findViewById(R.id.tv_timer);
-        ivState = findViewById(R.id.iv_state);
-        ivVoice = findViewById(R.id.iv_voice);
-        ivClose = findViewById(R.id.iv_close);
+    private void initView(View view) {
+        videoView = view.findViewById(R.id.videoView);
+        tvTimer = view.findViewById(R.id.tv_timer);
+        ivState = view.findViewById(R.id.iv_state);
+        ivVoice = view.findViewById(R.id.iv_voice);
+        ivClose = view.findViewById(R.id.iv_close);
+        ivLanding = view.findViewById(R.id.iv_landing);
         ivState.setOnClickListener(this);
         ivVoice.setOnClickListener(this);
         ivClose.setOnClickListener(this);
@@ -112,14 +128,32 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
             public void onCompletion(MediaPlayer mediaPlayer) {
                 ivState.setVisibility(View.VISIBLE);
                 ivState.setBackgroundResource(R.mipmap.pause);
+                ivLanding.setVisibility(View.VISIBLE);
+//                videoView.setVisibility(View.INVISIBLE);
+                ivLanding.setBackgroundResource(R.drawable.lating);
                 ivClose.setVisibility(View.VISIBLE);
+                isPlayFinish = true;
             }
         });
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
                 Log.i("setOnPreparedListener", "onPrepared: ");
+                ivLanding.setVisibility(View.GONE);
+                Log.i("cache===", "handleMessage: removeMessages");
                 videoViewHandler.removeMessages(TIMEOUT);
+                if (cacheVideoEventListener != null) {
+                    cacheVideoEventListener.cacheVideoStart();
+                }
+            }
+        });
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                if (cacheVideoEventListener != null) {
+                    cacheVideoEventListener.cacheVideoLoadError();
+                }
+                return false;
             }
         });
     }
@@ -131,63 +165,73 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
     }
 
     @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
-
-    @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.iv_state:
 //                videoPlay();
                 videoView.start();
+//                videoView.setVisibility(View.VISIBLE);
+                ivLanding.setVisibility(View.GONE);
                 ivState.setVisibility(View.GONE);
                 break;
             case R.id.iv_voice:
                 if (isSilent) {
                     //关闭声音
-                    currentVoice = VoiceUtil.getCurrentVoice(getApplicationContext());
+                    currentVoice = VoiceUtil.getCurrentVoice(getContext().getApplicationContext());
                     ivVoice.setBackgroundResource(R.mipmap.novoice);
-                    VoiceUtil.setVoiceVolume(0, getApplicationContext());
+                    VoiceUtil.setVoiceVolume(0, getContext().getApplicationContext());
                     isSilent = false;
                 } else {
                     //打开声音
                     ivVoice.setBackgroundResource(R.mipmap.voice);
-                    VoiceUtil.setVoiceVolume(currentVoice, getApplicationContext());
+                    VoiceUtil.setVoiceVolume(currentVoice, getContext().getApplicationContext());
                     isSilent = true;
                 }
                 break;
             case R.id.iv_close:
-                finish();
+                dismiss();
+                break;
+            case R.id.videoView:
+                break;
+            case R.id.iv_landing:
+
                 break;
         }
     }
 
     private static class VideoViewHandler extends Handler {
-        private WeakReference<Activity> activityWeakReference;
+        private WeakReference<DialogFragment> dialogFragmentWeakReference;
 
         public VideoViewHandler() {
         }
 
-        public VideoViewHandler(Activity activityWeakReference) {
-            this.activityWeakReference = new WeakReference<Activity>(activityWeakReference);
+        public VideoViewHandler(DialogFragment dialogFragment) {
+            this.dialogFragmentWeakReference = new WeakReference<DialogFragment>(dialogFragment);
         }
 
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            CacheActivity cacheActivity = (CacheActivity) activityWeakReference.get();
-            if (cacheActivity != null) {
+            CacheVideoDialogFragment cacheVideoDialogFragment = (CacheVideoDialogFragment) dialogFragmentWeakReference.get();
+            if (cacheVideoDialogFragment != null) {
                 switch (msg.what) {
                     case TIMEDURATION:
-                        VideoView videoView = cacheActivity.videoView;
-                        int time = (videoView.getDuration() - videoView.getCurrentPosition()) / 1000;
-                        cacheActivity.tvTimer.setText(String.valueOf(time));
+                        VideoView videoView = cacheVideoDialogFragment.videoView;
+                        int videoViewDuration = videoView.getDuration();
+                        int time = (videoViewDuration - videoView.getCurrentPosition()) / 1000;
+                        if (time==videoViewDuration/1000){
+                            removeMessages(TIMEOUT);
+                            CacheVideoEventListener listener = cacheVideoDialogFragment.cacheVideoEventListener;
+                            if (listener != null) {
+                                listener.cacheVideoStart();
+                            }
+                        }
+                        cacheVideoDialogFragment.tvTimer.setText(String.valueOf(time));
                         sendEmptyMessageDelayed(TIMEDURATION, 1000);
                         break;
                     case TIMEOUT:
                         Log.i("cache===", "handleMessage: timeout");
-                        cacheActivity.ivClose.setVisibility(View.VISIBLE);
+                        cacheVideoDialogFragment.ivClose.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -195,7 +239,7 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
         if (videoViewHandler != null) {
             videoViewHandler.removeCallbacksAndMessages(null);
@@ -204,5 +248,17 @@ public class CacheActivity extends AppCompatActivity implements CacheListener, V
         if (proxy != null) {
             proxy.unregisterCacheListener(this, VIDEO_URL);
         }
+        if (cacheVideoEventListener != null) {
+            if (isPlayFinish) {
+                cacheVideoEventListener.cacheVideoComplete();
+            } else {
+                cacheVideoEventListener.cacheVideoEnd();
+            }
+        }
+    }
+
+    public void setCacheVideoEventListener(CacheVideoEventListener cacheVideoEventListener) {
+        this.cacheVideoEventListener = cacheVideoEventListener;
     }
 }
+
